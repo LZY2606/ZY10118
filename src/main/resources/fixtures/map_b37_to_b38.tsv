@@ -1,0 +1,6 @@
+src_contig	src_start1	src_end1	dst_contig	dst_start1	dst_end1	dst_strand
+chr11	1	300	chr11	11	310	+
+chr17	1	300	chr17	1	300	-
+chr20	1	50	chr20	6	55	+
+chr20	51	120	chr20	66	135	+
+chr20	11	30	chr20	71	90	+

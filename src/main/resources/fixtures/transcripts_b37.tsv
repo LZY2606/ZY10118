@@ -1,0 +1,3 @@
+transcript_id	contig	strand	exons_start1	exons_end1	cds_start1	cds_end1	cds_exon_starts	cds_exon_ends	build
+TX_BETA	chr11	+	21,121	80,180	40	169	40,121	80,169	b37
+TX_DELTA	chr17	-	121,221	180,280	121	280	121,240	169,280	b37

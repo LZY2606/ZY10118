@@ -1,0 +1,30 @@
+{
+  "beta_g169": {
+    "aa": "*",
+    "cds": 90,
+    "codon": "TAA",
+    "expect_codon": "TTG"
+  },
+  "beta_g40": {
+    "aa": "M",
+    "cds": 1,
+    "codon": "ATG",
+    "expect_codon": "ATG"
+  },
+  "beta_g79": {
+    "aa": "L",
+    "cds": 40,
+    "codon": "TTA",
+    "expect_codon": "TTA"
+  },
+  "delta_g121": {
+    "aa": "*",
+    "cds": 90,
+    "codon": "TAA"
+  },
+  "delta_g280": {
+    "aa": "M",
+    "cds": 1,
+    "codon": "ATG"
+  }
+}

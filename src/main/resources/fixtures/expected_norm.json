@@ -1,0 +1,120 @@
+{
+  "chr20_polya_del_anchor10": {
+    "canonical": [
+      10,
+      "CA",
+      "C"
+    ],
+    "equivalent_anchors": [
+      10
+    ],
+    "input": [
+      10,
+      "CA",
+      "C"
+    ]
+  },
+  "chr20_polya_del_anchor11": {
+    "canonical": [
+      11,
+      "AA",
+      "A"
+    ],
+    "equivalent_anchors": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "input": [
+      11,
+      "AA",
+      "A"
+    ]
+  },
+  "chr20_polya_del_anchor18": {
+    "canonical": [
+      18,
+      "AG",
+      "G"
+    ],
+    "equivalent_anchors": [
+      18
+    ],
+    "input": [
+      18,
+      "AG",
+      "G"
+    ]
+  },
+  "chr20_polya_ins_anchor14": {
+    "canonical": [
+      11,
+      "A",
+      "AA"
+    ],
+    "equivalent_anchors": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "input": [
+      14,
+      "A",
+      "AA"
+    ]
+  },
+  "chr20_polya_ins_anchor19": {
+    "canonical": [
+      19,
+      "G",
+      "AG"
+    ],
+    "equivalent_anchors": [
+      19
+    ],
+    "input": [
+      19,
+      "G",
+      "AG"
+    ]
+  },
+  "chr20_polyt_del": {
+    "canonical": [
+      66,
+      "TA",
+      "A"
+    ],
+    "equivalent_anchors": [
+      66
+    ],
+    "input": [
+      66,
+      "TA",
+      "A"
+    ]
+  },
+  "chr20_start_sub": {
+    "canonical": [
+      1,
+      "A",
+      "T"
+    ],
+    "equivalent_anchors": [
+      1
+    ],
+    "input": [
+      1,
+      "A",
+      "T"
+    ]
+  }
+}

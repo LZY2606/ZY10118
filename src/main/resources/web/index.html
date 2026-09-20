@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>变体规范化审阅台</title>
+<link rel="stylesheet" href="app.css" />
+</head>
+<body>
+<header>
+  <h1>变体规范化审阅台</h1>
+  <div class="meta">
+    <span>注释规则版本：<b id="rulesVersion">-</b></span>
+    <span>参考构建：<select id="buildFilter"><option value="">全部</option></select></span>
+    <button id="refreshBtn">刷新</button>
+  </div>
+</header>
+
+<main>
+  <section class="panes">
+    <div class="pane groups-pane">
+      <h2>等价组 <small id="groupCount"></small></h2>
+      <div class="legend">
+        <span class="tag unique">唯一物理位置</span>
+        <span class="tag repeat">重复序列多位置</span>
+        <span class="tag frozen">已冻结</span>
+        <span class="tag mismatch">参考不一致</span>
+      </div>
+      <ul id="groupList"></ul>
+    </div>
+
+    <div class="pane detail-pane">
+      <h2 id="detailTitle">选择一个等价组</h2>
+      <div id="detail"></div>
+    </div>
+  </section>
+
+  <section class="tools">
+    <div class="card">
+      <h3>导入 VCF 批次（原子操作）</h3>
+      <label>批次 ID <input id="batchId" value="DEMO-RETRY-001" /></label>
+      <label>构建 <input id="batchBuild" value="b37" /></label>
+      <textarea id="batchVcf" rows="6" placeholder="粘贴 VCF 文本"></textarea>
+      <button id="importBtn">导入 / 重试（同 ID 返回原收据）</button>
+      <pre id="importResult" class="result"></pre>
+    </div>
+    <div class="card">
+      <h3>导入参考构建映射并生成影响清单</h3>
+      <label>源构建 <input id="loSrc" value="b37" size="6" /></label>
+      <label>目标构建 <input id="loDst" value="b38" size="6" /></label>
+      <textarea id="loChain" rows="6" placeholder="粘贴 chain TSV"></textarea>
+      <button id="loBtn">导入并生成影响清单</button>
+      <pre id="loResult" class="result"></pre>
+    </div>
+    <div class="card">
+      <h3>参考不一致记录</h3>
+      <ul id="mismatchList"></ul>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
