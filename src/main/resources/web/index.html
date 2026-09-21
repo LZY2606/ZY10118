@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pair-wise GSB 变异规范化审阅台</title>
+<style>
+  :root { --bg:#0f1420; --panel:#171e2e; --line:#28324a; --fg:#e6ebf5; --muted:#8b97ad;
+          --accent:#5aa9ff; --good:#41c66a; --warn:#f0b340; --bad:#ff6b6b; --flip:#c08cff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+         background:var(--bg); color:var(--fg); }
+  header { padding:12px 20px; border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; }
+  header .meta { color:var(--muted); font-size:12px; }
+  main { display:grid; grid-template-columns:380px 1fr; gap:0; height:calc(100vh - 49px); }
+  .pane { overflow:auto; padding:14px 18px; }
+  #left { border-right:1px solid var(--line); }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:14px; }
+  section h2 { font-size:13px; margin:0 0 10px; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
+  label { display:block; font-size:12px; color:var(--muted); margin:8px 0 3px; }
+  input,textarea,select { width:100%; background:#0d1220; color:var(--fg); border:1px solid var(--line);
+       border-radius:5px; padding:6px 8px; font:inherit; }
+  textarea { min-height:110px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+  button { background:var(--accent); color:#081220; border:0; border-radius:5px; padding:7px 14px;
+       font-weight:600; cursor:pointer; margin-top:10px; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .row { display:flex; gap:8px; align-items:center; }
+  .row > * { flex:1; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { text-align:left; padding:5px 7px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  tr.group { cursor:pointer; }
+  tr.group:hover { background:#1d2740; }
+  tr.group.active { background:#22304d; }
+  .pill { display:inline-block; padding:1px 7px; border-radius:10px; font-size:11px; font-weight:600; }
+  .pill.UNIQUE,.pill.PROJECTED { background:rgba(65,198,106,.18); color:var(--good); }
+  .pill.FLIPPED { background:rgba(192,140,255,.18); color:var(--flip); }
+  .pill.MANY_TO_ONE { background:rgba(240,179,64,.18); color:var(--warn); }
+  .pill.INTERRUPTED { background:rgba(240,179,64,.18); color:var(--warn); }
+  .pill.UNMAPPED,.pill.FAILED,.pill.REF_FLAGGED { background:rgba(255,107,107,.18); color:var(--bad); }
+  .pill.FROZEN { background:rgba(90,169,255,.2); color:var(--accent); }
+  .pill.NONE,.pill.EXONIC { background:rgba(139,151,173,.18); color:var(--muted); }
+  .pill.INTRONIC,.pill.SPLICE_REGION,.pill.UTR5,.pill.UTR3 { background:rgba(240,179,64,.14); color:var(--warn); }
+  code,.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+  .kv { display:grid; grid-template-columns:150px 1fr; gap:3px 10px; margin:6px 0; }
+  .kv .k { color:var(--muted); }
+  .step { border-left:2px solid var(--line); padding:4px 10px; margin:6px 0; }
+  .step .kind { color:var(--accent); font-weight:600; }
+  .muted { color:var(--muted); }
+  .window { font-family:ui-monospace,Menlo,monospace; font-size:12px; word-break:break-all; background:#0d1220;
+       border:1px solid var(--line); border-radius:5px; padding:8px; }
+  .allele { background:rgba(90,169,255,.25); border-radius:3px; }
+  .exons { display:flex; height:26px; gap:2px; margin:8px 0 4px; align-items:stretch; }
+  .exon { background:#2c4a7c; border-radius:3px; position:relative; min-width:6px; }
+  .exon.cds { background:var(--accent); }
+  .exon .vmark { position:absolute; top:-6px; width:2px; height:38px; background:var(--bad); }
+  .axis { color:var(--muted); font-size:11px; display:flex; justify-content:space-between; }
+  .note { font-size:12px; color:var(--muted); margin-top:6px; }
+  .toast { position:fixed; right:18px; bottom:18px; max-width:420px; background:#202a40;
+       border:1px solid var(--line); border-radius:8px; padding:10px 14px; display:none; white-space:pre-wrap; }
+  .toast.err { border-color:var(--bad); }
+  .toast.ok { border-color:var(--good); }
+  .conflict { border-color:var(--bad) !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pair-wise GSB · 变异规范化审阅台</h1>
+  <span class="meta" id="health">连接中…</span>
+</header>
+<main>
+  <div class="pane" id="left">
+    <section>
+      <h2>批次导入（原子 · 幂等）</h2>
+      <div class="row">
+        <div><label>批次 ID</label><input id="batchId" value="BATCH-2026-0921-01"></div>
+        <div><label>参考构建</label><select id="buildSel"></select></div>
+      </div>
+      <label>精简 VCF（粘贴或用示例填充）</label>
+      <textarea id="vcfInput" placeholder="#CHROM&#9;POS&#9;ID&#9;REF&#9;ALT&#9;QUAL&#9;FILTER&#9;INFO"></textarea>
+      <div class="row">
+        <button id="loadSample">填入示例 VCF</button>
+        <button id="importBtn" style="flex:2">导入批次</button>
+      </div>
+      <div id="receipt" class="note"></div>
+    </section>
+
+    <section>
+      <h2>等价组</h2>
+      <label>构建过滤</label>
+      <select id="groupBuild"><option value="">全部</option></select>
+      <table>
+        <thead><tr><th>ID</th><th>规范化坐标</th><th>状态</th></tr></thead>
+        <tbody id="groupRows"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>参考构建映射（liftover）</h2>
+      <label>chain TSV（9 列：fromBuild toBuild chrom srcStart srcEnd strand dstChrom dstStart dstEnd）</label>
+      <textarea id="chainInput" style="min-height:80px"></textarea>
+      <div class="row">
+        <button id="chainSample" class="ghost">填入示例 chain</button>
+        <button id="chainBtn" style="flex:2">导入并生成影响清单（原子）</button>
+      </div>
+      <div id="impact"></div>
+    </section>
+  </div>
+
+  <div class="pane" id="right">
+    <div id="detail" class="muted">选择左侧一个等价组查看规范化路径、转录本投影与审阅操作。</div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+let health = null, groups = [], currentId = null, currentGroup = null;
+
+function toast(msg, kind) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (kind || 'err');
+  t.style.display = 'block';
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.style.display = 'none', 6000);
+}
+const esc = (s) => (s == null ? '' : String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
+const pill = (s) => s ? `<span class="pill ${esc(s)}">${esc(s)}</span>` : '';
+
+async function api(path, opts) {
+  const res = await fetch('/api/' + path, opts);
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || ('HTTP ' + res.status));
+  return body;
+}
+async function postJson(path, obj) {
+  return api(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj) });
+}
+
+async function loadHealth() {
+  health = await api('health');
+  $('health').textContent = `规则版本 ${health.rules} · 转录本 ${health.transcriptSet} · 构建 ${[...health.builds].join(', ')}`;
+  $('buildSel').innerHTML = [...health.builds].map(b => `<option ${b==='hg19'?'selected':''}>${esc(b)}</option>`).join('');
+  $('groupBuild').innerHTML = '<option value="">全部</option>' +
+    [...health.builds].map(b => `<option>${esc(b)}</option>`).join('');
+  await loadGroups();
+  const tx = await api('transcripts');
+  window._tx = tx.transcripts;
+}
+
+async function loadGroups() {
+  const b = $('groupBuild').value;
+  const data = await api('groups' + (b ? '?build=' + encodeURIComponent(b) : ''));
+  groups = data.groups;
+  $('groupRows').innerHTML = groups.map(g => `
+    <tr class="group ${g.id===currentId?'active':''}" data-id="${g.id}">
+      <td>${g.id}</td>
+      <td class="mono">${esc(g.build)} ${g.refMismatch ? '(REF 不一致)' :
+        `${esc(g.chrom)}:${g.canonPos}:${esc(g.canonRef)}&gt;${esc(g.canonAlt)}`}
+        ${g.placementCount > 1 ? `<span class="muted">×${g.placementCount} 等价位置</span>` : ''}</td>
+      <td>${pill(g.reviewState)} ${g.refMismatch ? pill('REF_FLAGGED') : ''}
+          <span class="muted">证据 ${g.evidenceCount}</span></td>
+    </tr>`).join('');
+  document.querySelectorAll('tr.group').forEach(tr => tr.onclick = () => showGroup(+tr.dataset.id));
+}
+
+async function showGroup(id) {
+  currentId = id;
+  document.querySelectorAll('tr.group').forEach(tr => tr.classList.toggle('active', +tr.dataset.id === id));
+  try {
+    currentGroup = await api('groups/' + id);
+    renderDetail(currentGroup);
+  } catch (e) { toast(e.message); }
+}
+
+function windowHtml(w) {
+  const start = w.alleleStart, len = w.alleleLength;
+  const before = w.window.slice(0, start);
+  const allele = w.window.slice(start, start + len);
+  const after = w.window.slice(start + len);
+  const ruler = ' '.repeat(before.length) + '^'.repeat(len);
+  return `<div class="window">${esc(before)}<span class="allele">${esc(allele)}</span>${esc(after)}<br>
+    <span class="muted">${w.start}..${w.end} @ build ${esc(w.build)} （高亮=规范化 REF 覆盖区间）</span></div>`;
+}
+
+function renderWindow(g) {
+  if (g.refMismatch) return '<div class="note">参考不一致，无法生成对齐窗口。</div>';
+  const url = `/api/alignment-window?build=${encodeURIComponent(g.build)}&chrom=${encodeURIComponent(g.chrom)}` +
+    `&pos=${g.canonPos}&refLen=${g.canonRef.length}`;
+  setTimeout(async () => {
+    const box = document.getElementById('alignmentWindow');
+    if (!box) return;
+    try { box.innerHTML = windowHtml(await (await fetch(url)).json()); }
+    catch (e) { box.textContent = e.message; }
+  }, 0);
+  return '<div id="alignmentWindow" class="note">加载对齐窗口…</div>';
+}
+
+function renderExons(g, c) {
+  const txs = window._tx.filter(t => t.build === g.build && t.chrom === g.chrom);
+  if (!txs.length) return '';
+  const vStart = g.canonPos, vEnd = g.canonPos + (g.canonRef ? g.canonRef.length : 1) - 1;
+  return txs.map(t => {
+    const lo = t.exons[0].start, hi = t.exons[t.exons.length - 1].end;
+    const span = hi - lo + 1;
+    const bars = t.exons.map(ex => {
+      const left = ((ex.start - lo) / span * 100);
+      const width = ((ex.end - ex.start + 1) / span * 100);
+      const isCds = !(ex.end < t.cdsStart || ex.start > t.cdsEnd);
+      let mark = '';
+      if (vStart <= ex.end && vEnd >= ex.start) {
+        const mLeft = Math.max(0, (Math.max(vStart, ex.start) - ex.start) / (ex.end - ex.start + 1) * 100);
+        mark = `<div class="vmark" style="left:${mLeft}%"></div>`;
+      }
+      return `<div class="exon ${isCds?'cds':''}" style="position:absolute;left:${left}%;width:${width}%">${mark}</div>`;
+    }).join('');
+    const introns = t.exons.slice(1).map((ex, k) => {
+      const prev = t.exons[k];
+      const left = ((prev.end - lo) / span * 100);
+      const width = ((ex.start - prev.end - 1) / span * 100);
+      return `<div style="position:absolute;top:12px;left:${left}%;width:${width}%;height:2px;background:#2c3a5c"></div>`;
+    }).join('');
+    return `<div style="margin:10px 0">
+      <div><b>${esc(t.txId)}</b> <span class="muted">${esc(t.gene)} strand=${esc(t.strand)} build=${esc(t.build)}</span></div>
+      <div style="position:relative;height:40px;margin:4px 0">
+        <div style="position:absolute;top:12px;left:0;right:0;height:2px;background:#23304a"></div>
+        ${introns}${bars}
+      </div>
+      <div class="axis"><span>${lo}</span><span>${hi}</span></div>
+      <div class="note">蓝=C&nbsp;&nbsp;深=UTR；红色竖线为变异与外显子的交点。对应后果见下。</div>
+    </div>`;
+  }).join('');
+}
+
+function renderDetail(g) {
+  const placements = g.refMismatch ? '' : `
+    <section><h2>等价位置（重复区全部保留）</h2>
+      <table><thead><tr><th>#</th><th>slide</th><th>VCF 表示</th></tr></thead><tbody>
+      ${g.placements.map((p,i) => `<tr class="${i===0?'':''}"><td>${i===0?'★ 首选':i+1}</td><td>${p.slide}</td>
+        <td class="mono">${esc(p.chrom)}:${p.pos}:${esc(p.ref)}&gt;${esc(p.alt)}</td></tr>`).join('')}
+      </tbody></table>
+      <div class="note">首选规则：${esc(g.preferenceRule)}</div>
+    </section>`;
+
+  const steps = `<section><h2>规范化计算路径</h2>
+    ${g.normSteps.map(s => `<div class="step"><span class="kind">${esc(s.kind)}</span>
+      <div>${esc(s.detail)}${s.pos ? ` <span class="mono">@${s.pos}${s.ref?' '+esc(s.ref)+'&gt;'+esc(s.alt):''}</span>` : ''}</div></div>`).join('')}
+  </section>`;
+
+  const evidence = `<section><h2>来源证据（原始 ↔ 拆分双向追溯）</h2>
+    <table><thead><tr><th>批次</th><th>来源</th><th>行</th><th>ALT#</th><th>角色</th><th>原始记录</th></tr></thead><tbody>
+    ${g.evidence.map(e => `<tr><td>${esc(e.batchId)}</td><td>${esc(e.source)}</td><td>${e.lineNumber}</td>
+      <td>${e.altIndex + 1}</td><td>${pill(e.role)}</td>
+      <td class="mono" style="max-width:340px;word-break:break-all">${esc(e.rawLine)}</td></tr>`).join('')}
+    </tbody></table></section>`;
+
+  const cons = `<section><h2>转录本投影</h2>
+    ${renderExons(g)}
+    ${g.consequences.map(c => `
+      <div style="border-top:1px solid var(--line);padding:8px 0">
+        <div class="row" style="align-items:center">
+          <b class="mono">${esc(c.txId)}</b> ${pill(c.status)} ${pill(c.failureType)} ${pill(c.region)}
+          ${c.hgvsgLike ? `<span class="mono">${esc(c.hgvsgLike)}</span>` : ''}
+        </div>
+        ${c.refCdna ? `<div class="note mono">cDNA@${c.transcriptPos}: ${esc(c.refCdna)} &gt; ${esc(c.altCdna)}</div>` : ''}
+        <div>${c.path.map(s => `<div class="step"><span class="kind">${esc(s.step)}</span><div>${esc(s.detail)}</div></div>`).join('')}</div>
+      </div>`).join('')}
+  </section>`;
+
+  const lo = g.liftovers.length ? `<section><h2>参考构建映射</h2>
+    <table><thead><tr><th>目标构建</th><th>状态</th><th>坐标</th><th>说明</th></tr></thead><tbody>
+    ${g.liftovers.map(l => `<tr><td>${esc(l.toBuild)}</td><td>${pill(l.status)}</td>
+      <td class="mono">${l.dstPos ? esc(l.dstChrom)+':'+l.dstPos+(l.dstRef?' '+esc(l.dstRef)+'&gt;'+esc(l.dstAlt):'—'}</td>
+      <td>${esc(l.detail)} <span class="muted">(候选 ${l.candidateCount})</span></td></tr>`).join('')}
+    </tbody></table></section>` : '';
+
+  const review = `<section><h2>审阅（乐观锁 v${g.reviewVersion}）</h2>
+    <div class="kv">
+      <div class="k">当前状态</div><div>${pill(g.reviewState)} ${g.frozen ? pill('FROZEN') : ''}</div>
+      <div class="k">规范化规则</div><div class="mono">${esc(g.rulesVersion)}</div>
+    </div>
+    ${g.refMismatch ? `<div class="note">参考期望：<span class="mono">${esc(g.expectedRef || '区间越界')}</span></div>` : ''}
+    <label>审阅者</label><input id="reviewer" placeholder="工号/姓名" class="${g.reviewVersion>1?'conflict':''}">
+    <label>备注</label><input id="reviewNote" placeholder="冻结理由或参考不一致说明">
+    <div class="row">
+      <button id="freezeBtn">冻结规范化结果</button>
+      <button id="flagBtn" class="ghost">标记参考不一致</button>
+    </div>
+    <div class="note">提交基于版本 v${g.reviewVersion}；若他人已提交新版本，服务器将拒绝覆盖。</div>
+  </section>`;
+
+  $('detail').innerHTML = `
+    <section><h2>等价组 #${g.id} · ${esc(g.build)}</h2>
+      <div class="kv">
+        <div class="k">规范化坐标</div>
+        <div class="mono">${g.refMismatch ? '无（REF 不一致）' :
+          `${esc(g.chrom)}:${g.canonPos}:${esc(g.canonRef)}&gt;${esc(g.canonAlt)}`}</div>
+        <div class="k">等价位置数</div><div>${g.placements.length}</div>
+        <div class="k">对齐窗口</div><div>${renderWindow(g)}</div>
+      </div>
+    </section>
+    ${placements}${steps}${evidence}${cons}${lo}${review}`;
+
+  $('freezeBtn').onclick = () => submitReview('FROZEN');
+  $('flagBtn').onclick = () => submitReview('REF_FLAGGED');
+}
+
+async function submitReview(state) {
+  try {
+    const r = await postJson('reviews', {
+      groupId: currentGroup.id, expectedVersion: currentGroup.reviewVersion,
+      reviewer: $('reviewer').value.trim(), state, note: $('reviewNote').value.trim(),
+    });
+    toast('已提交，新版本 v' + r.version, 'ok');
+    await loadGroups(); await showGroup(currentGroup.id);
+  } catch (e) { toast(e.message); }
+}
+
+$('loadSample').onclick = async () => {
+  const r = await fetch('/api/sample-vcf');
+  $('vcfInput').value = r.ok ? await r.text() : '';
+};
+$('chainSample').onclick = async () => {
+  const r = await fetch('/api/sample-chain');
+  $('chainInput').value = r.ok ? await r.text() : '';
+};
+$('importBtn').onclick = async () => {
+  try {
+    const r = await postJson('import-batch', {
+      batchId: $('batchId').value.trim(), build: $('buildSel').value, vcf: $('vcfInput').value,
+    });
+    $('receipt').innerHTML = `收据 #${esc(r.batchId)} build=${esc(r.build)} 记录=${r.records} 等位=${r.alleles} 组=${r.groups} REF不符=${r.refMismatches} ${r.replay?'<b>（同批次重试，返回原收据）</b>':''}`;
+    toast(r.replay ? '幂等重试：返回原始收据' : '导入成功', 'ok');
+    await loadGroups();
+  } catch (e) { toast(e.message); }
+};
+$('groupBuild').onchange = loadGroups;
+$('chainBtn').onclick = async () => {
+  try {
+    const r = await postJson('import-chain', { chainTsv: $('chainInput').value });
+    $('impact').innerHTML = `<table>
+      <tr><td>段数</td><td>${r.segments}</td></tr>
+      <tr><td>${pill('UNIQUE')}</td><td>${r.newUniqueGroups}</td></tr>
+      <tr><td>${pill('FLIPPED')}</td><td>${r.flippedGroups}</td></tr>
+      <tr><td>${pill('MANY_TO_ONE')}</td><td>${r.manyToOneGroups}</td></tr>
+      <tr><td>${pill('INTERRUPTED')}</td><td>${r.interruptedGroups}</td></tr>
+      <tr><td>${pill('UNMAPPED')}</td><td>${r.unmappedGroups}</td></tr>
+    </table>${r.warnings.length ? '<div class="note">'+r.warnings.map(esc).join('<br>')+'</div>' : ''}`;
+    await loadGroups();
+    if (currentId) await showGroup(currentId);
+    toast('映射导入完成（原子）', 'ok');
+  } catch (e) { toast(e.message); }
+};
+loadHealth().catch(e => toast(e.message));
+</script>
+</body>
+</html>

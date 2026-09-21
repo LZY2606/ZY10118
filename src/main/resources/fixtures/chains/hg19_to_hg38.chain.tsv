@@ -1,0 +1,6 @@
+# fromBuild=hg19 toBuild=hg38 segments=5
+hg19	hg38	chr1	100	1999	+	chr1	1000	2899
+hg19	hg38	chr1	2000	2099	-	chr1	4000	4099
+hg19	hg38	chr1	2010	2099	-	chr1	5050	5139
+hg19	hg38	chr1	2200	2240	+	chr1	6000	6040
+hg19	hg38	chr1	2250	2499	+	chr1	7000	7249

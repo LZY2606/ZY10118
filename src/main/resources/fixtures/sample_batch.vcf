@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##source=fixture
+##reference=hg19
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	220	.	T	A	.	PASS	SRC=labA;NOTE=exonic_snv
+chr1	2002	.	AA	AAA	.	PASS	SRC=labB;NOTE=homopolymer_insert_left_align
+chr1	2060	.	T	A	.	PASS	SRC=labA;NOTE=many_to_one_overlap_snv
+chr1	900	.	CATC	C	.	PASS	SRC=labC;NOTE=tandem_deletion
+chr1	950	.	ATG	A,AT	.	PASS	SRC=labA;NOTE=composite_multiallelic
+chr1	2500	.	T	A	.	PASS	SRC=labB;NOTE=ref_mismatch
+chr1	1550	.	A	T	.	PASS	SRC=labC;NOTE=negative_strand_exon
+chr1	285	.	CTGCTGCTGC	CTGCT	.	PASS	SRC=labA;NOTE=cross_exon_boundary_deletion
+chr1	2238	.	GAGT	G	.	PASS	SRC=labC;NOTE=liftover_interrupted_at_segment_end
+chr1	2500	.	A	T	.	PASS	SRC=labA;NOTE=unmapped_no_segment

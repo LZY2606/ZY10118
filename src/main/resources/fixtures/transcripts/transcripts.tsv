@@ -1,0 +1,4 @@
+# transcriptSetVersion=tx-fixture-1
+txId	gene	chrom	strand	exons	cdsStart	cdsEnd	build
+NM_DEMO_P	DEMO1	chr1	+	201-289,370-459	209	456	hg19
+NM_DEMO_N	DEMO2	chr1	-	1501-1580,1661-1740	1512	1732	hg19
